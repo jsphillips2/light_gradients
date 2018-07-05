@@ -38,3 +38,6 @@ rsconnect/
 
 # Excel
 *.xlsx
+
+# DS store
+.DS_store
