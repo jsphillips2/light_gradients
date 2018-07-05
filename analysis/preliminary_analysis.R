@@ -40,7 +40,7 @@ theme_base = theme_bw()+
 benthic %>% 
   filter(site=="st33") %>%
   ggplot(aes(relative_light, do_flux))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
+  geom_hline(yintercept = 0, size = 0.5, alpha*(s3*site) = 0.5)+
   geom_point(size=3.5)+
   scale_color_manual("Midge Tubes",values=c("gray60","dodgerblue2","firebrick"))+
   scale_y_continuous("Net Ecosystem Production")+
@@ -49,11 +49,35 @@ benthic %>%
 benthic %>% 
   filter(site=="reyk") %>%
   ggplot(aes(relative_light, do_flux))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
+  geom_hline(yintercept = 0, size = 0.5, alpha*(s3*site) = 0.5)+
   geom_point(size=3.5)+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
+benthic %>%
+  mutate(light = ifelse(site=="st33", 200*relative_light, 100*relative_light)) %>%
+  ggplot(aes(light, do_flux, color=site))+
+  geom_hline(yintercept = 0, size = 0.5, alpha*(s3*site) = 0.5)+
+  geom_point(size=3.5)+
+  scale_y_continuous("Net Ecosystem Production")+
+  theme_base
+
+m = nls(do_flux ~ beta*(1.08^2)*tanh((alpha/1000)*(100*light)/beta*(1.08^2)) - 
+          rho*(1.11^2), 
+        data = benthic %>% 
+          filter(site=="st33") %>%
+          mutate(light = ),
+        start = c(beta = 0.2,  alpha = 1, rho = 0.1))
+summary(m)
+
+m = nls(do_flux ~ beta*(s1*site)*(1.08^2)*tanh((alpha*(s3*site)/1000)*(light)/beta*(s1*site)*(1.08^2)) - 
+          rho*(s2*site)*(1.11^2), 
+        data = benthic %>%
+          filter(site == "st33") %>%
+          mutate(light = ifelse(site=="st33", 200*relative_light, 100*relative_light),
+                 site = ifelse(site=="st33", 0, 1)),
+        start = c(beta = 0.2,  alpha = 1, rho = 0.1, s1 = 1, s2 = 1, s3 = 1))
+summary(m)
 
 
 
@@ -65,17 +89,23 @@ benthic %>%
 pelagic %>% 
   filter(site=="st33") %>%
   ggplot(aes(relative_light, do_flux ))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
+  geom_hline(yintercept = 0, size = 0.5, alpha*(s3*site) = 0.5)+
   geom_point(size=3.5)+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
 pelagic %>% 
   filter(site=="reyk") %>%
+  filter(!(do_flux > -0.01 & relative_light > 7.5))%>%
   ggplot(aes(relative_light, do_flux ))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
+  geom_hline(yintercept = 0, size = 0.5, alpha*(s3*site) = 0.5)+
   geom_point(size=3.5)+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
 
+
+
+m = lm(do_flux ~ relative_light, 
+       data = benthic %>% filter(site=="reyk"))
+summary(m)
