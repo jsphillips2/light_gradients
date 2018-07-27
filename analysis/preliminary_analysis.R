@@ -4,14 +4,15 @@
 
 # load packages
 library(tidyverse)
+library(lubridate)
 library(nlme)
 
 # import data
 # define relative light
 benthic = read_csv("data/benthic_grad.csv") 
 pelagic = read_csv("data/pelagic_grad.csv") 
-profiles = read_csv("data/light_profile.csv")
-shading = read_csv("data/shading.csv")
+profiles = read_csv("data/light_profile.csv") 
+shading = read_csv("data/shading.csv") 
 
 # define base theme
 theme_base = theme_bw()+
@@ -30,24 +31,70 @@ theme_base = theme_bw()+
 
 
 #==========
-#========== Benthic: Plot
+#========== Process data
 #==========
 
-benthic %>%
-  mutate(light = ifelse(site=="st33", 200*relative_light, 100*relative_light)) %>%
-  ggplot(aes(light, do_flux, color=interaction(site, sampledate)))+
+# calculate effect of shading
+shading_trt  = shading %>%
+  mutate(light_frac = ifelse(par_in > par_out, 1, par_in/par_out)) %>%
+  group_by(light_trt) %>%
+  summarize(light_frac = mean(light_frac))
+
+# benthic light
+benthic_light = benthic %>%
+  group_by(sampledate, site) %>%
+  summarize(time_start = min(time_start),
+            time_end = max(time_end),
+            depth = unique(inc_depth)) %>%
+  left_join(profiles %>%
+              filter(sampledate != "2018-06-27", site != "grim") %>%
+              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
+  mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
+  group_by(site, sampledate) %>%
+  summarize(par = mean(par))
+
+# pelagic light
+pelagic_light = pelagic %>%
+  filter(is.na(time_start)==F, is.na(time_end)==F, site != "grim") %>%
+  group_by(sampledate, site) %>%
+  summarize(time_start = min(time_start),
+            time_end = max(time_end),
+            depth = unique(inc_depth)) %>%
+  left_join(profiles %>%
+              filter(sampledate != "2018-06-27", site != "grim") %>%
+              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
+  mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
+  group_by(site, sampledate) %>%
+  summarize(par = mean(par))
+
+# add light data to benthic
+benthic_full = benthic %>%
+  left_join(benthic_light) %>%
+  left_join(shading_trt) %>%
+  mutate(par = light_frac*par)
+
+# add light data to benthic
+pelagic_full = pelagic %>%
+  filter(site != "grim") %>%
+  left_join(pelagic_light) %>%
+  left_join(shading_trt) %>%
+  mutate(par = light_frac*par) 
+
+
+
+
+
+#==========
+#========== Analysis: Benthic
+#==========
+
+benthic_full %>%
+  ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
-  scale_color_manual("", values=c("dodgerblue","firebrick","gray"))+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
-
-
-
-
-#==========
-#========== Benthic: Fit model
-#==========
 
 # define gradient for P-I curve
 mod = deriv(~beta*(1.08^2)*tanh((alpha/1000)*light/(beta*(1.08^2))) - rho*(1.11^2),
@@ -58,72 +105,54 @@ mod = deriv(~beta*(1.08^2)*tanh((alpha/1000)*light/(beta*(1.08^2))) - rho*(1.11^
 # allow paraemters to differ between sites
 # don't yet have proper light data, so approximate
 m = nlme(
-  model = do_flux ~ mod(beta, alpha, rho, light),
-  fixed = c(beta ~ site, alpha ~ site, rho ~ site),
+  model = do_flux ~ mod(beta, alpha, rho, par),
+  fixed = c(beta ~ site*sampledate, alpha ~ site*sampledate, rho ~ site*sampledate),
   random = rho ~ 1|dummy, 
-  data = benthic %>%
-    mutate(light = ifelse(site=="st33", 
-                          200*relative_light, 
-                          100*relative_light),
-           dummy = 1,
-           site = ifelse(site=="st33", 1, 0)) %>%
-    filter(
-      !(light > 50 & do_flux < 0)
-    ),
-  start = c(0.1, 0, 1, 0, 0.1, 0)
+  data = benthic_full %>%
+    mutate(dummy = 1,
+           site = ifelse(site=="st33", 1, 0)) ,
+  start = c(0.1, 0, 0, 0, 1, 0, 0, 0, 0.1, 0, 0, 0)
 )
+
+
 
 # examine values
 summary(m)
 anova(m)
 
-# model predictions
-nd = crossing(site = c("st33", "reyk"),
-              light = 0:200,
-              dummy = 1)
-nd$do_flux = predict(m, newdata=nd)
+# data frame of modeled values
+benthic_pred = benthic_full %>%
+  expand(nesting(sampledate, site), par = seq(min(par), max(par), 0.1)) 
+benthic_pred$do_flux = predict(m, newdata = benthic_pred %>%
+                                 mutate(dummy = 1,
+                                        site = ifelse(site=="st33", 1, 0)))
 
 # plot
-benthic %>%
-  mutate(light = ifelse(site=="st33", 200*relative_light, 100*relative_light)) %>%
-  ggplot(aes(light, do_flux, color=site))+
+
+benthic_full %>%
+  ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
+  # facet_wrap(site ~ sampledate, scales="free_x")+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
-  geom_line(data = nd, size=0.75)+
   geom_point(size=3.5)+
-  scale_color_manual(values=c("dodgerblue", "firebrick"))+
+  geom_line(data = benthic_pred, size = 1)+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
-
 
 
 
 
 
 #==========
-#========== Plot Data
+#========== Analysis: Pelagic
 #==========
 
-pelagic %>% 
-  filter(site=="st33") %>%
-  ggplot(aes(relative_light, do_flux ))+
+pelagic_full %>%
+  ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
+  facet_wrap(site ~ sampledate, scales="free_x")+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
-  scale_y_continuous("Net Ecosystem Production")+
-  theme_base
-
-pelagic %>% 
-  filter(site=="reyk", sampledate=="2018-06-28") %>%
-  ggplot(aes(relative_light, do_flux ))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
-  geom_point(size=3.5)+
-  scale_y_continuous("Net Ecosystem Production")+
-  theme_base
-
-pelagic %>% 
-  filter(site=="reyk", sampledate=="2018-07-17") %>%
-  ggplot(aes(relative_light, do_flux ))+
-  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
-  geom_point(size=3.5)+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
