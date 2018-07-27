@@ -9,11 +9,11 @@ library(nlme)
 
 # import data
 # define relative light
-benthic = read_excel("data/field_incubations_5jul18.xlsx", sheet = "BenthicGradient",
+benthic = read_excel("data/field_incubations_24jul18.xlsx", sheet = "BenthicGradient",
                      na = "NA") %>%
   mutate(light_trt  = ifelse(light_trt == 10, 9, light_trt),
          relative_light = (max(light_trt) - light_trt)/max(light_trt))
-pelagic = read_excel("data/field_incubations_5jul18.xlsx", sheet = "Pelagic",
+pelagic = read_excel("data/field_incubations_24jul18.xlsx", sheet = "Pelagic",
                      na = "NA") %>%
   mutate(light_trt  = ifelse(light_trt == 10, 9, light_trt),
          relative_light = (max(light_trt) - light_trt)/max(light_trt))
@@ -40,9 +40,10 @@ theme_base = theme_bw()+
 
 benthic %>%
   mutate(light = ifelse(site=="st33", 200*relative_light, 100*relative_light)) %>%
-  ggplot(aes(light, do_flux, color=site))+
+  ggplot(aes(light, do_flux, color=interaction(site, sampledate)))+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
@@ -116,12 +117,18 @@ pelagic %>%
   theme_base
 
 pelagic %>% 
-  filter(site=="reyk") %>%
+  filter(site=="reyk", sampledate=="2018-06-28") %>%
   ggplot(aes(relative_light, do_flux ))+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
-
+pelagic %>% 
+  filter(site=="reyk", sampledate=="2018-07-17") %>%
+  ggplot(aes(relative_light, do_flux ))+
+  geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
+  geom_point(size=3.5)+
+  scale_y_continuous("Net Ecosystem Production")+
+  theme_base
 
