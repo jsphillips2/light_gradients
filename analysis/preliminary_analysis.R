@@ -4,19 +4,14 @@
 
 # load packages
 library(tidyverse)
-library(readxl)
 library(nlme)
 
 # import data
 # define relative light
-benthic = read_excel("data/field_incubations_24jul18.xlsx", sheet = "BenthicGradient",
-                     na = "NA") %>%
-  mutate(light_trt  = ifelse(light_trt == 10, 9, light_trt),
-         relative_light = (max(light_trt) - light_trt)/max(light_trt))
-pelagic = read_excel("data/field_incubations_24jul18.xlsx", sheet = "Pelagic",
-                     na = "NA") %>%
-  mutate(light_trt  = ifelse(light_trt == 10, 9, light_trt),
-         relative_light = (max(light_trt) - light_trt)/max(light_trt))
+benthic = read_csv("data/benthic_grad.csv") 
+pelagic = read_csv("data/pelagic_grad.csv") 
+profiles = read_csv("data/light_profile.csv")
+shading = read_csv("data/shading.csv")
 
 # define base theme
 theme_base = theme_bw()+
