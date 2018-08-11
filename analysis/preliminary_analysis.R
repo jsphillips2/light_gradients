@@ -106,11 +106,12 @@ mod = deriv(~beta*(1.08^2)*tanh((alpha/1000)*light/(beta*(1.08^2))) - rho*(1.11^
 # don't yet have proper light data, so approximate
 m = nlme(
   model = do_flux ~ mod(beta, alpha, rho, par),
-  fixed = c(beta ~ site*sampledate, alpha ~ site*sampledate, rho ~ site*sampledate),
+  fixed = c(beta ~ site*time, alpha ~ site*time, rho ~ site*time),
   random = rho ~ 1|dummy, 
   data = benthic_full %>%
     mutate(dummy = 1,
-           site = ifelse(site=="st33", 1, 0)) ,
+           site = ifelse(site=="st33", 1, 0),
+           time = as.numeric(sampledate) - min(as.numeric(sampledate))),
   start = c(0.1, 0, 0, 0, 1, 0, 0, 0, 0.1, 0, 0, 0)
 )
 
@@ -123,9 +124,13 @@ anova(m)
 # data frame of modeled values
 benthic_pred = benthic_full %>%
   expand(nesting(sampledate, site), par = seq(min(par), max(par), 0.1)) 
-benthic_pred$do_flux = predict(m, newdata = benthic_pred %>%
-                                 mutate(dummy = 1,
-                                        site = ifelse(site=="st33", 1, 0)))
+benthic_pred$do_flux = 
+  predict(m, newdata = 
+            benthic_pred %>% 
+            mutate(dummy = 1,
+                   site = ifelse(site=="st33", 1, 0),
+                   time = as.numeric(sampledate) - min(as.numeric(sampledate))
+                   )) 
 
 # plot
 
@@ -139,7 +144,7 @@ benthic_full %>%
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
-
+summary(m)$tTable
 
 
 
@@ -155,4 +160,28 @@ pelagic_full %>%
   scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
+
+# define gradient for P-I curve
+mod = deriv(~beta*(1.08^2)*tanh((alpha/1000)*light/(beta*(1.08^2))) - rho*(1.11^2),
+            c("beta", "alpha", "rho"), 
+            function(beta, alpha, rho, light){})
+
+# fit model
+# allow paraemters to differ between sites
+# don't yet have proper light data, so approximate
+m = nlme(
+  model = do_flux ~ mod(beta, alpha, rho, par),
+  fixed = c(beta ~ site, alpha ~ site, rho ~ site),
+  random = rho ~ 1|dummy, 
+  data = pelagic_full %>%
+    filter(is.na(do_flux) == F,
+           sampledate > "2018-06-28") %>%
+    mutate(dummy = 1,
+           site = ifelse(site=="st33", 1, 0)) ,
+  start = c(0.01, 0, 1, 0, 0.01, 0)
+)
+
+summary(m)
+anova(m)
+
 
