@@ -9,10 +9,8 @@ library(nlme)
 
 # import data
 # define relative light
-benthic = read_csv("data/benthic_grad.csv") 
-pelagic = read_csv("data/pelagic_grad.csv") 
-profiles = read_csv("data/light_profile.csv") 
-shading = read_csv("data/shading.csv") 
+benthic_clean = read_csv("data/clean_data/benthic_clean.csv") 
+pelagic_clean = read_csv("data/clean_data/pelagic_clean.csv") 
 
 # define base theme
 theme_base = theme_bw()+
@@ -31,68 +29,14 @@ theme_base = theme_bw()+
 
 
 #==========
-#========== Process data
-#==========
-
-# calculate effect of shading
-shading_trt  = shading %>%
-  mutate(light_frac = ifelse(par_in > par_out, 1, par_in/par_out)) %>%
-  group_by(light_trt) %>%
-  summarize(light_frac = mean(light_frac))
-
-# benthic light
-benthic_light = benthic %>%
-  group_by(sampledate, site) %>%
-  summarize(time_start = min(time_start),
-            time_end = max(time_end),
-            depth = unique(inc_depth)) %>%
-  left_join(profiles %>%
-              filter(sampledate != "2018-06-27", site != "grim") %>%
-              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
-  mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
-  group_by(site, sampledate) %>%
-  summarize(par = mean(par))
-
-# pelagic light
-pelagic_light = pelagic %>%
-  filter(is.na(time_start)==F, is.na(time_end)==F, site != "grim") %>%
-  group_by(sampledate, site) %>%
-  summarize(time_start = min(time_start),
-            time_end = max(time_end),
-            depth = unique(inc_depth)) %>%
-  left_join(profiles %>%
-              filter(sampledate != "2018-06-27", site != "grim") %>%
-              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
-  mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
-  group_by(site, sampledate) %>%
-  summarize(par = mean(par))
-
-# add light data to benthic
-benthic_full = benthic %>%
-  left_join(benthic_light) %>%
-  left_join(shading_trt) %>%
-  mutate(par = light_frac*par)
-
-# add light data to benthic
-pelagic_full = pelagic %>%
-  filter(site != "grim") %>%
-  left_join(pelagic_light) %>%
-  left_join(shading_trt) %>%
-  mutate(par = light_frac*par) 
-
-
-
-
-
-#==========
 #========== Analysis: Benthic
 #==========
 
-benthic_full %>%
+benthic_clean %>%
   ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
-  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange","magenta"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
@@ -108,7 +52,7 @@ m = nlme(
   model = do_flux ~ mod(beta, alpha, rho, par),
   fixed = c(beta ~ site*time, alpha ~ site*time, rho ~ site*time),
   random = rho ~ 1|dummy, 
-  data = benthic_full %>%
+  data = benthic_clean %>%
     mutate(dummy = 1,
            site = ifelse(site=="st33", 1, 0),
            time = as.numeric(sampledate) - min(as.numeric(sampledate))),
@@ -122,7 +66,7 @@ summary(m)
 anova(m)
 
 # data frame of modeled values
-benthic_pred = benthic_full %>%
+benthic_pred = benthic_clean %>%
   expand(nesting(sampledate, site), par = seq(min(par), max(par), 0.1)) 
 benthic_pred$do_flux = 
   predict(m, newdata = 
@@ -133,14 +77,13 @@ benthic_pred$do_flux =
                    )) 
 
 # plot
-
-benthic_full %>%
+benthic_clean %>%
   ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
   # facet_wrap(site ~ sampledate, scales="free_x")+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
   geom_line(data = benthic_pred, size = 1)+
-  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange","magenta"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
@@ -152,12 +95,12 @@ summary(m)$tTable
 #========== Analysis: Pelagic
 #==========
 
-pelagic_full %>%
+pelagic_clean %>%
   ggplot(aes(par, do_flux, color=interaction(site, sampledate)))+
   facet_wrap(site ~ sampledate, scales="free_x")+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5)+
-  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange"))+
+  scale_color_manual("", values=c("dodgerblue","firebrick","gray","orange","magenta"))+
   scale_y_continuous("Net Ecosystem Production")+
   theme_base
 
@@ -173,7 +116,7 @@ m = nlme(
   model = do_flux ~ mod(beta, alpha, rho, par),
   fixed = c(beta ~ site, alpha ~ site, rho ~ site),
   random = rho ~ 1|dummy, 
-  data = pelagic_full %>%
+  data = pelagic_clean %>%
     filter(is.na(do_flux) == F,
            sampledate > "2018-06-28") %>%
     mutate(dummy = 1,
