@@ -19,13 +19,13 @@ sheets = excel_sheets("data/raw_data/field_incubations_11aug18.xlsx")
 
 # read sheets
 benthic_grad = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
-                          sheet = "BenthicGradient")
+                          sheet = "BenthicGradient", na=c("","NA"))
 pelagic_grad = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
-                          sheet = "Pelagic")
+                          sheet = "Pelagic", na=c("","NA"))
 light_profile = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
-                          sheet = "LightProfiles")
+                          sheet = "LightProfiles", na=c("","NA"))
 shading = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
-                          sheet = "Shading")
+                          sheet = "Shading", na=c("","NA"))
 
 
 
