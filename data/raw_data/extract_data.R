@@ -7,7 +7,7 @@ library(readxl)
 library(readr)
 
 # examine sheets
-sheets = excel_sheets("data/raw_data/field_incubations_11aug18.xlsx")
+sheets = excel_sheets("data/raw_data/field_incubations_16aug18.xlsx")
 
 
 
@@ -18,13 +18,13 @@ sheets = excel_sheets("data/raw_data/field_incubations_11aug18.xlsx")
 #==========
 
 # read sheets
-benthic_grad = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
+benthic_grad = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
                           sheet = "BenthicGradient", na=c("","NA"))
-pelagic_grad = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
+pelagic_grad = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
                           sheet = "Pelagic", na=c("","NA"))
-light_profile = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
+light_profile = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
                           sheet = "LightProfiles", na=c("","NA"))
-shading = read_excel("data/raw_data/field_incubations_11aug18.xlsx",
+shading = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
                           sheet = "Shading", na=c("","NA"))
 
 
