@@ -7,7 +7,6 @@ library(tidyverse)
 library(lubridate)
 
 # import data
-# define relative light
 benthic = read_csv("data/raw_data/benthic_grad.csv") 
 pelagic = read_csv("data/raw_data/pelagic_grad.csv") 
 profiles = read_csv("data/raw_data/light_profile.csv") 
@@ -50,6 +49,7 @@ benthic_light = benthic %>%
               mutate(site = ifelse(site=="btl", "reyk", site),
                      site = ifelse(site == "kal", "st33", site))) %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
+  filter(within == T) %>%
   group_by(site, sampledate) %>%
   summarize(par = mean(par))
 
@@ -65,6 +65,7 @@ pelagic_light = pelagic %>%
               mutate(site = ifelse(site=="btl", "reyk", site),
                      site = ifelse(site == "kal", "st33", site))) %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
+  filter(within == T) %>%
   group_by(site, sampledate) %>%
   summarize(par = mean(par))
 
