@@ -5,7 +5,6 @@
 # load packages
 library(tidyverse)
 library(lubridate)
-library(nlme)
 
 # import data
 # define relative light
