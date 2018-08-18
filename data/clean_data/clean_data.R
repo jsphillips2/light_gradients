@@ -48,7 +48,8 @@ benthic_light = benthic %>%
             depth = unique(inc_depth)) %>%
   left_join(profiles %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
-              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
+              mutate(site = ifelse(site=="btl", "reyk", site),
+                     site = ifelse(site == "kal", "st33", site))) %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
   group_by(site, sampledate) %>%
   summarize(par = mean(par))
@@ -62,7 +63,8 @@ pelagic_light = pelagic %>%
             depth = unique(inc_depth)) %>%
   left_join(profiles %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
-              mutate(site = ifelse(site=="btl", "reyk", site))) %>%
+              mutate(site = ifelse(site=="btl", "reyk", site),
+                     site = ifelse(site == "kal", "st33", site))) %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
   group_by(site, sampledate) %>%
   summarize(par = mean(par))
@@ -122,8 +124,8 @@ pelagic_clean = pelagic_full %>%
 #========== Export
 #==========
 
-write_csv(bethic_clean, "data/clean_data/benthic_clean.csv")
-write_csv(pelagic_clean, "data/clean_data/pelagic_clean.csv")
+# write_csv(bethic_clean, "data/clean_data/benthic_clean.csv")
+# write_csv(pelagic_clean, "data/clean_data/pelagic_clean.csv")
 
 
 
