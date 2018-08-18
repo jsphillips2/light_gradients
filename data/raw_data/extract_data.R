@@ -36,10 +36,10 @@ shading = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
 #==========
 
 # export sheets
-write_csv(benthic_grad, "data/raw_data/benthic_grad.csv")
-write_csv(pelagic_grad, "data/raw_data/pelagic_grad.csv")
-write_csv(light_profile, "data/raw_data/light_profile.csv")
-write_csv(shading, "data/raw_data/shading.csv")
+# write_csv(benthic_grad, "data/raw_data/benthic_grad.csv")
+# write_csv(pelagic_grad, "data/raw_data/pelagic_grad.csv")
+# write_csv(light_profile, "data/raw_data/light_profile.csv")
+# write_csv(shading, "data/raw_data/shading.csv")
 
 
 
