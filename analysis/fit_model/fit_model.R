@@ -50,11 +50,11 @@ index_data = main_data %>%
 # priors
 priors = list(prior_beta_site = c(0.35, 0.35),
               prior_alpha_site = c(1, 1),
-              prior_opt_site = c(1000, 10),
+              # prior_opt_site = c(1000, 10),
               prior_rho_site = c(0.12, 0.12),
               prior_sig_beta = c(0.01, 0.03),
               prior_sig_alpha = c(0.1, 0.3),
-              prior_sig_opt = c(1, 1),
+              # prior_sig_opt = c(1, 1),
               prior_sig_rho = c(0.01, 0.03),
               prior_gamma_1 = c(1.9, 0.005),
               prior_gamma_2 = c(1.12, 0.005),
@@ -77,10 +77,10 @@ init_fn = function(x){x %>%
         runif(.$Nsites, 
               min = .$prior_alpha_site[1]*0.5, 
               max = .$prior_alpha_site[1]*1.5),
-      opt_site = 
-        runif(.$Nsites, 
-              min =.$prior_opt_site[1]*0.5, 
-              max = .$prior_opt_site[1]*1.5),
+      # opt_site = 
+      #   runif(.$Nsites, 
+      #         min =.$prior_opt_site[1]*0.5, 
+      #         max = .$prior_opt_site[1]*1.5),
       rho_site = 
         runif(.$Nsites,
               min = .$prior_rho_site[1]*0.5, 
@@ -93,10 +93,10 @@ init_fn = function(x){x %>%
         runif(1, 
               min = .$prior_sig_alpha[1]*0.5, 
               max = .$prior_sig_alpha[1]*1.5),
-      sig_opt = 
-        runif(1, 
-              min = .$prior_sig_opt[1]*0.5, 
-              max = .$prior_sig_opt[1]*1.5),
+      # sig_opt = 
+      #   runif(1, 
+      #         min = .$prior_sig_opt[1]*0.5, 
+      #         max = .$prior_sig_opt[1]*1.5),
       sig_rho = 
         runif(1, 
               min = .$prior_sig_rho[1]*0.5, 
