@@ -41,3 +41,6 @@ rsconnect/
 
 # DS store
 .DS_store
+
+# Stan
+*.rds
