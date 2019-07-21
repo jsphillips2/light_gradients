@@ -6,8 +6,11 @@
 library(readxl)
 library(readr)
 
+# set path
+path <- "data/raw_data/field_incubations_20jul19.xlsx"
+
 # examine sheets
-sheets = excel_sheets("data/raw_data/field_incubations_16aug18.xlsx")
+sheets = excel_sheets(path)
 
 
 
@@ -18,14 +21,10 @@ sheets = excel_sheets("data/raw_data/field_incubations_16aug18.xlsx")
 #==========
 
 # read sheets
-benthic_grad = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
-                          sheet = "BenthicGradient", na=c("","NA"))
-pelagic_grad = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
-                          sheet = "Pelagic", na=c("","NA"))
-light_profile = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
-                          sheet = "LightProfiles", na=c("","NA"))
-shading = read_excel("data/raw_data/field_incubations_16aug18.xlsx",
-                          sheet = "Shading", na=c("","NA"))
+benthic_grad = read_excel(path, sheet = "BenthicGradient", na=c("","NA"))
+pelagic_grad = read_excel(path, sheet = "Pelagic", na=c("","NA"))
+light_profile = read_excel(path, sheet = "LightProfiles", na=c("","NA"))
+shading = read_excel(path, sheet = "Shading", na=c("","NA"))
 
 
 
