@@ -12,7 +12,11 @@ pelagic <- read_csv("data/raw_data/extracted/pelagic_grad.csv")
 profiles <- read_csv("data/raw_data/extracted/light_profile.csv") 
 shading <- read_csv("data/raw_data/extracted/shading.csv") 
 
-
+# correct light meter readings taken out in air (-0.05m) prior to 2019
+# in-water calibration multiplier for UW-LTREB Li-Cor meter is -344.88
+# in-air calibration multiplier for UW-LTREB Li-Cor meter is -261.28
+profiles <- profiles %>%
+  mutate(par = ifelse(year(sampledate) < 2019, (-261.28/-344.88)*par, par))
 
 
 

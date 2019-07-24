@@ -27,12 +27,6 @@ light_profile <- read_excel(path, sheet = "LightProfiles", na=c("","NA"))
 shading <- read_excel(path, sheet = "Shading", na=c("","NA"))
 hobo_log <- read_excel(path, sheet = "HOBOLog", na=c("","NA")) 
 
-# correct light meter readings taken out in air (-0.05m) prior to 2019
-# in-water calibration multiplier for UW-LTREB Li-Cor meter is -344.88
-# in-air calibration multiplier for UW-LTREB Li-Cor meter is -261.28
-light_profile <- light_profile %>%
-  mutate(par = ifelse(year(sampledate) < 2019, (-261.28/-344.88)*par, par))
-
 
 
 
