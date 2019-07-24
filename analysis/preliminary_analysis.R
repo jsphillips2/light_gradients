@@ -33,13 +33,16 @@ theme_set(theme_bw() %+replace%
 
 # plot
 benthic_clean %>%
+  filter(!is.na(par)) %>%
+  mutate(site = factor(site), site = droplevels(site)) %>%
   ggplot(aes(par, do_flux, color = factor(sampledate)))+
   facet_wrap(~site, nrow = 2)+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
-  geom_point(size=3.5, alpha = 0.7)+
+  geom_point(size=3.5, alpha = 0.6)+
   scale_y_continuous("Net Ecosystem Production")+
   scale_color_manual("",values=c("dodgerblue3","dodgerblue3","firebrick3","firebrick3",
-                                 "gray40","gray40"))
+                                 "gray40","gray40","magenta4"))+
+  stat_smooth(method = "gam", formula = y~s(x, k =3), se = F)
 
 #==========
 #========== Analysis: Pelagic
@@ -47,10 +50,13 @@ benthic_clean %>%
 
 # plot
 pelagic_clean %>%
+  filter(!is.na(par), sampledate != "2018-08-15") %>%
+  mutate(site = factor(site), site = droplevels(site)) %>%
   ggplot(aes(par, do_flux, color = factor(sampledate)))+
   facet_wrap(~site, nrow = 2)+
   geom_hline(yintercept = 0, size = 0.5, alpha = 0.5)+
   geom_point(size=3.5, alpha = 0.7)+
   scale_y_continuous("Net Ecosystem Production")+
   scale_color_manual("",values=c("dodgerblue3","dodgerblue3","firebrick3","firebrick3",
-                                 "gray40","gray40","gray40","orange"))
+                                 "gray40","gray40","orange","magenta4"))+
+  stat_smooth(method = "gam", formula = y~s(x, k =3), se = F)
