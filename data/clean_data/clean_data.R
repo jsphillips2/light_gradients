@@ -17,7 +17,39 @@ shading <- read_csv("data/raw_data/extracted/shading.csv")
 
 
 #==========
-#========== Process data: Light (from Li-Cor meter)
+#========== Light attenuation & light at depth (from Li-Cor)
+#==========
+
+# attenuation
+light_atten <- profiles %>%
+  mutate(par = ifelse(par == 0, 0.5, par)) %>%
+  group_by(time, site) %>%
+  filter(depth >= 0, length(na.omit(par) > 1)) %>%
+  ungroup() %>%
+  split(.$time) %>%
+  lapply(function(x){split(x, x$site)}) %>%
+  lapply(function(x){xx = x[[1]]
+  m = lm(log(par) ~ depth, data = xx)
+  xxx = xx %>%
+    group_by(sampledate, time, site) %>%
+    summarize(par0 = exp(coef(m)[1]),
+              atten = coef(m)[2])
+  return(xxx)
+  }) %>%
+  bind_rows() 
+
+# expand by depths
+light_depth <-light_atten %>%
+  expand(sampledate, time, site, par0, atten, depth = profiles$depth) %>%
+  mutate(par = par0*exp(atten*depth))
+
+
+
+
+
+
+#==========
+#========== Add light data to metabolism data
 #==========
 
 # calculate effect of shading
@@ -32,7 +64,7 @@ benthic_light <- benthic %>%
   summarize(time_start = min(time_start),
             time_end = max(time_end),
             depth = unique(inc_depth)) %>%
-  left_join(profiles %>%
+  left_join(light_depth %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
               mutate(site = ifelse(site=="btl", "reyk", site),
                      site = ifelse(site == "kal", "st33", site))) %>%
@@ -48,7 +80,7 @@ pelagic_light <- pelagic %>%
   summarize(time_start = min(time_start),
             time_end = max(time_end),
             depth = unique(inc_depth)) %>%
-  left_join(profiles %>%
+  left_join(light_depth %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
               mutate(site = ifelse(site=="btl", "reyk", site),
                      site = ifelse(site == "kal", "st33", site))) %>%
@@ -59,108 +91,185 @@ pelagic_light <- pelagic %>%
 
 # add light data to benthic
 benthic_full <- benthic %>%
-  left_join(benthic_light) %>%
-  left_join(shading_trt) %>%
-  mutate(par = light_frac*par)
+  left_join(benthic_light)
 
 # add light data to benthic
 pelagic_full <- pelagic %>%
   filter(site != "grim") %>%
-  left_join(pelagic_light) %>%
-  left_join(shading_trt) %>%
-  mutate(par = light_frac*par) 
+  left_join(pelagic_light)
 
 
 
 
 
 #==========
-#========== Process data: Light (HOBO)
+#========== HOBO Light (for select dates)
 #==========
+
+# estimate decline in light immediately beneath surface
+air_surf <- profiles %>%
+  mutate(depth = ifelse(depth == 0.05, 0, depth)) %>%
+  filter(depth %in% c(-0.05, 0)) %>%
+  spread(depth, par) %>%
+  rename(air = `-0.05`,
+         surf = `0`) %>%
+  na.omit() %>%
+  {lm(surf ~ air - 1, data = .)}
+coef(air_surf)
 
 # import all files
 hobo_names <- list.files("data/raw_data/hobo")
 hobo <- hobo_names %>%
   lapply(function(x){read_csv(paste0("data/raw_data/hobo/", x), skip = 1) %>%
       mutate(site = str_split(x,"_")[[1]][1],
-             loc = str_split(x,"_")[[1]][2])})
+             type = str_split(x,"_")[[1]][2])})
 hobo[[1]]
 
 # rename and select relevant columns
-hobo_slim <- hobo %>%
+hobo_clean <- hobo %>%
   lapply(function(x){
     x %>%
       rename(date_time = grep("Date",names(hobo[[1]])),
              lux = grep("Intensity",names(hobo[[1]]))) %>%
-      select(site, loc, date_time, lux) %>%
+      select(site, type, date_time, lux) %>%
       return()
   }) %>%
-  bind_rows()
-
-# convert lux to par using standard correction for sunlight (divide by 54)
-# approximate external par as par at 0.5cm (multiply by 0.44; based on analysis in sonde_oxygen)
-hobo_clean = hobo_slim %>%
+  bind_rows() %>%
+  mutate(sampledate = as_date(date_time)) %>%
+  # combine with log file, only keeping mathces
+  inner_join(read_csv("data/raw_data/extracted/hobo_log.csv") %>%
+               mutate(sampledate = as_date(sampledate))) %>%
+  # convert lux to par using standard correction for sunlight (divide by 54)
+  # approximate external par as par at water surface
   mutate(par = lux/54,
-         par = ifelse(loc == "out", 0.44*par, par))
+         par = ifelse(type == "out", coef(air_surf)*par, par))
 
-# e5 benthic
-e5_benthic <- benthic_full %>%
+
+
+#==========
+#========== Add HOBO light (for select dates)
+#==========
+
+
+# Reykjahlid 17 July 2018
+# benthic
+reyk_benthic18 <- benthic_full %>%
+  filter(site == "reyk" & sampledate == "2018-07-17") %>%
+  group_by(sampledate, site) %>%
+  summarize(time_start = min(time_start),
+            time_end = max(time_end),
+            depth = unique(inc_depth)) %>%
+  left_join(hobo_clean %>%
+              select(-depth) %>%
+              filter(type == "out")) %>%
+  mutate(within = date_time > time_start - 60*30 & date_time < time_end + 60*30) %>%
+  filter(within == T) %>%
+  group_by(site, sampledate) %>%
+  summarize(par0 = mean(par)) %>%
+  left_join(light_atten %>% 
+              filter(site == "reyk" & sampledate == "2018-07-17") %>%
+              group_by(site, sampledate) %>%
+              summarize(atten = mean(atten))) %>%
+  mutate(par = par0*exp(atten*0.5)) %>%
+  select(site, sampledate, par)
+
+# pelagic
+reyk_pelagic18 <- pelagic_full %>%
+  filter(site == "reyk" & sampledate == "2018-07-17") %>%
+  group_by(sampledate, site) %>%
+  summarize(time_start = min(time_start),
+            time_end = max(time_end),
+            depth = unique(inc_depth)) %>%
+  left_join(hobo_clean %>%
+              select(-depth) %>%
+              filter(type == "out")) %>%
+  mutate(within = date_time > time_start - 60*30 & date_time < time_end + 60*30) %>%
+  filter(within == T) %>%
+  group_by(site, sampledate) %>%
+  summarize(par0 = mean(par)) %>%
+  left_join(light_atten %>% 
+              filter(site == "reyk" & sampledate == "2018-07-17") %>%
+              group_by(site, sampledate) %>%
+              summarize(atten = mean(atten))) %>%
+  mutate(par = par0*exp(atten*0.5)) %>%
+  select(site, sampledate, par)
+
+
+
+# e5 22-July-2019 
+# benthic
+e5_benthic19 <- benthic_full %>%
+  filter(site == "e5" & sampledate == "2019-07-22") %>%
+  group_by(sampledate, site) %>%
+  summarize(time_start = min(time_start),
+            time_end = max(time_end),
+            depth = unique(inc_depth)) %>%
+  left_join(hobo_clean %>%
+              select(-depth) %>%
+              filter(type == "out")) %>%
+  mutate(within = date_time > time_start - 60*30 & date_time < time_end + 60*30) %>%
+  filter(within == T) %>%
+  rename(par0 = par) %>%
+  select(-time_start, -time_end, -lux, -within, -type) %>%
+  left_join(hobo_clean %>%
+              select(-depth) %>%
+              filter(type == "bottom") %>%
+              rename(parX = par) %>%
+              select(-lux, - type)) %>%
+  mutate(atten = -log(parX/par0)/2.5,
+         par = par0*exp(-mean(atten, na.rm=T)*0.5)) %>%
+  group_by(sampledate, site) %>%
+  summarize(par = mean(par)) %>%
+  select(site, sampledate, par)
+
+# pelagic
+e5_pelagic19 <- pelagic_full %>%
+  filter(site == "e5" & sampledate == "2019-07-22") %>%
   filter(site == "e5") %>%
   group_by(sampledate, site) %>%
   summarize(time_start = min(time_start),
             time_end = max(time_end),
             depth = unique(inc_depth)) %>%
   left_join(hobo_clean %>%
-              filter(loc == "out")) %>%
+              select(-depth) %>%
+              filter(type == "out")) %>%
   mutate(within = date_time > time_start - 60*30 & date_time < time_end + 60*30) %>%
   filter(within == T) %>%
   rename(par0 = par) %>%
-  select(-time_start, -time_end, -lux, -within, -loc) %>%
+  select(-time_start, -time_end, -lux, -within, -type) %>%
   left_join(hobo_clean %>%
-              filter(loc == "bottom") %>%
+              select(-depth) %>%
+              filter(type == "bottom") %>%
               rename(parX = par) %>%
-              select(-lux, - loc)) %>%
+              select(-lux, - type)) %>%
   mutate(atten = -log(parX/par0)/2.5,
          par = par0*exp(-mean(atten, na.rm=T)*0.5)) %>%
   group_by(sampledate, site) %>%
-  summarize(par = mean(par))
+  summarize(par = mean(par)) %>%
+  select(site, sampledate, par)
 
-# e5 pelagic
-e5_pelagic <- pelagic_full %>%
-  filter(site == "e5") %>%
-  group_by(sampledate, site) %>%
-  summarize(time_start = min(time_start),
-            time_end = max(time_end),
-            depth = unique(inc_depth)) %>%
-  left_join(hobo_clean %>%
-              filter(loc == "out")) %>%
-  mutate(within = date_time > time_start - 60*30 & date_time < time_end + 60*30) %>%
-  filter(within == T) %>%
-  rename(par0 = par) %>%
-  select(-time_start, -time_end, -lux, -within, -loc) %>%
-  left_join(hobo_clean %>%
-              filter(loc == "bottom") %>%
-              rename(parX = par) %>%
-              select(-lux, - loc)) %>%
-  mutate(atten = -log(parX/par0)/2.5,
-         par = par0*exp(-mean(atten, na.rm=T)*0.5)) %>%
-  group_by(sampledate, site) %>%
-  summarize(par = mean(par))
+
 
 # add to full data
 benthic_full <- benthic_full %>%
-  left_join(e5_benthic %>% rename(par2 = par)) %>%
+  left_join(e5_benthic19 %>% rename(par2 = par)) %>%
+  left_join(reyk_benthic18 %>% rename(par3 = par)) %>%
   left_join(shading_trt) %>%
   mutate(par2 = light_frac*par2,
-         par = ifelse(sampledate=="2019-07-22", par2, par)) %>%
-  select(-par2)
+         par3 = light_frac*par3,
+         par = ifelse(is.na(par2)==F, par2, ifelse(is.na(par3)==F, par3, par)),
+         par = light_frac*par) %>%
+  select(-par2, -par3)
 
 pelagic_full <- pelagic_full %>%
-  left_join(e5_pelagic %>% rename(par2 = par)) %>%
+  left_join(e5_pelagic19 %>% rename(par2 = par)) %>%
+  left_join(reyk_pelagic18 %>% rename(par3 = par)) %>%
   left_join(shading_trt) %>%
   mutate(par2 = light_frac*par2,
-         par = ifelse(sampledate=="2019-07-22", par2, par)) %>%
-  select(-par2)
+         par3 = light_frac*par3,
+         par = ifelse(is.na(par2)==F, par2, ifelse(is.na(par3)==F, par3, par)),
+         par = light_frac*par) %>%
+  select(-par2, -par3)
 
 
 
