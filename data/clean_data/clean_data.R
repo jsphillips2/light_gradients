@@ -65,8 +65,8 @@ shading_trt <- shading %>%
 # benthic light
 benthic_light <- benthic %>%
   group_by(sampledate, site) %>%
-  summarize(time_start = min(time_start),
-            time_end = max(time_end),
+  summarize(time_start = min(time_start,na.rm=T),
+            time_end = max(time_end,na.rm=T),
             depth = unique(inc_depth)) %>%
   left_join(light_depth %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
@@ -75,14 +75,14 @@ benthic_light <- benthic %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
   filter(within == T) %>%
   group_by(site, sampledate) %>%
-  summarize(par = mean(par))
+  summarize(par = mean(par,na.rm=T))
 
 # pelagic light
 pelagic_light <- pelagic %>%
   filter(is.na(time_start)==F, is.na(time_end)==F, site != "grim") %>%
   group_by(sampledate, site) %>%
-  summarize(time_start = min(time_start),
-            time_end = max(time_end),
+  summarize(time_start = min(time_start,na.rm=T),
+            time_end = max(time_end,na.rm=T),
             depth = unique(inc_depth)) %>%
   left_join(light_depth %>%
               filter(sampledate != "2018-06-27", site != "grim") %>%
@@ -91,7 +91,7 @@ pelagic_light <- pelagic %>%
   mutate(within = time > time_start - 60*30 & time < time_end + 60*30) %>%
   filter(within == T) %>%
   group_by(site, sampledate) %>%
-  summarize(par = mean(par))
+  summarize(par = mean(par,na.rm=T))
 
 # add light data to benthic
 benthic_full <- benthic %>%
