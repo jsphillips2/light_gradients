@@ -10,7 +10,9 @@ source("analysis/fit_model/stan_utility.R")
 
 # stan settings
 rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores()-2)
+# options(mc.cores = parallel::detectCores()-2)
+
+cl <- parallel::makeCluster(2, setup_strategy = "sequential")
 
 # read data
 type <- "benthic"
@@ -42,7 +44,7 @@ model_path <- paste0("analysis/fit_model/stan/",model)
 
 # MCMC specifications
 chains <- 4
-iter <- 2000
+iter <- 10
 adapt_delta <- 0.95
 max_treedepth <- 15
 

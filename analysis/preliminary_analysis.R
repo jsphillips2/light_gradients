@@ -41,7 +41,7 @@ benthic_clean %>%
   geom_point(size=3.5, alpha = 0.6)+
   scale_y_continuous("Net Ecosystem Production")+
   scale_color_manual("",values=c("dodgerblue3","dodgerblue3","firebrick3","firebrick3",
-                                 "gray40","gray40","magenta4","forestgreen","darkorange"))+
+                                 "gray40","gray40","magenta4","forestgreen","darkorange","navyblue"))+
   stat_smooth(method = "gam", formula = y~s(x, k =3), se = F)
 
 #==========
