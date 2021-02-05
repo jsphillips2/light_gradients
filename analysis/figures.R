@@ -550,173 +550,116 @@ fig_par
 #========== Parameter correlations
 #=========================================================================================
 
-# set up par names
-par_names <- c("Initial slope",
-               "Max GPP",
-               "Respiration")
-names(par_names) <- c("a","b","r")
+# # set up par names
+# par_names <- c("Initial slope",
+#                "Max GPP",
+#                "Respiration")
+# names(par_names) <- c("a","b","r")
+# 
+# # pelagic
+# 
+# pel_par_names <- c(paste0("b[",1:9,"]"),
+#                    paste0("a[",1:9,"]"),
+#                    paste0("r[",1:9,"]"))
+# 
+# pel_pars_full <- pelagic_rds$fit %>%
+#   rstan::extract(pars = pel_par_names) %>%
+#   parallel::mclapply(as_tibble) %>%
+#   bind_cols() %>%
+#   set_names(pel_par_names) %>%
+#   mutate(step = row_number()) %>%
+#   gather(var, val, -step) %>%
+#   mutate(par = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
+#          id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
+#   left_join(pelagic_rds$dd %>%
+#               select(date, site, event) %>%
+#               unique() %>%
+#               mutate(id = row_number()))
+# 
+# pel_cor <- pel_pars_full %>%
+#   split(.$step) %>%
+#   parallel::mclapply(function(x){
+#     x %>%
+#       select(par, val, event) %>%
+#       ungroup() %>%
+#       arrange(par) %>%
+#       pivot_wider(names_from = par,
+#                   values_from = val) %>%
+#       select(-event) %>%
+#       cor() %>%
+#       as_tibble() %>%
+#       mutate(step = unique(x$step),
+#              row = row_number())
+#   }) %>%
+#   bind_rows
+#   
+# pel_cor <- pel_cor %>%
+#   pivot_longer(cols = c(a, b, r)) %>%
+#   group_by(row, name) %>%
+#   summarize(lo = quantile(value, probs = 0.16),
+#             mi = median(value),
+#             hi = quantile(value, probs = 0.84)) %>%
+#   ungroup() %>%
+#   pivot_wider(names_from = name,
+#               values_from = c(lo, mi, hi))
+# 
+# # write_csv(pel_cor, "analysis/output/pel_cor.csv")
 
-# define function for plotting
-fig_cor_fun <- function(d_, 
-                        x_, 
-                        y_,
-                        x_breaks_,
-                        y_breaks_,
-                        x_limits_,
-                        y_limits_){
-  d_wide_ = d_ %>% 
-    select(name, site, date, event, mi) %>%
-    filter(name %in% c(x_, y_)) %>%
-    pivot_wider(values_from = mi) %>%
-    rename(x = all_of(x_),
-           y = all_of(y_))
-
-  ggplot(data = d_wide_,
-         aes(x = 1000 * x,
-             y = 1000 * y))+
-    geom_point(size = 1.5)+
-    scale_y_continuous(par_names[y_],
-                       limits = y_limits_,
-                       breaks = y_breaks_)+
-    scale_x_continuous(par_names[x_],
-                       limits = x_limits_,
-                       breaks = x_breaks_)+
-    theme(panel.border = element_blank(),
-          panel.spacing = unit(0, "lines"),
-          axis.line.x = element_line(size = 0.25),
-          axis.line.y = element_line(size = 0.25))+
-    geom_smooth(method = "lm",
-                formula = y ~ x,
-                se = F,
-                color = "black",
-                size = 0.5)+
-    coord_capped_cart(left = "both", 
-                      bottom="both")
-}
-
-# plot pelagic panels 
-
-fig_cor_pel_ab <- fig_cor_fun(d_ = pel_pars, 
-                              x_ = "a",
-                              y_ = "b",
-                              x_breaks_ = c(1.6, 1.8, 2.0, 2.2),
-                              y_breaks_= c(0, 22, 44, 66),
-                              x_limits_= c(1.6, 2.2),
-                              y_limits_= c(0, 66))
-
-fig_cor_pel_ar <- fig_cor_fun(d_ = pel_pars, 
-                             x_ = "a",
-                             y_ = "r",
-                             x_breaks_ = c(1.6, 1.8, 2.0, 2.2),
-                             y_breaks_= c(11, 13, 15, 17),
-                             x_limits_= c(1.6, 2.2),
-                             y_limits_= c(11, 17))
-
-fig_cor_pel_br <- fig_cor_fun(d_ = pel_pars, 
-                              x_ = "r",
-                              y_ = "b",
-                              x_breaks_ = c(11, 13, 15, 17),
-                              y_breaks_= c(0, 22, 44, 66),
-                              x_limits_= c(11, 17),
-                              y_limits_= c(0, 66))
-
-fig_cor_pel <- plot_grid(fig_cor_pel_ab,
-                         fig_cor_pel_ar,
-                         fig_cor_pel_br,
-                         nrow = 3,
-                         align = "v")
-
-
-
-# plot pelagic panels 
-
-fig_cor_ben_ab <- fig_cor_fun(d_ = ben_pars, 
-                              x_ = "a",
-                              y_ = "b",
-                              x_breaks_ = c(1.6, 1.8, 2.0, 2.2),
-                              y_breaks_= c(0, 22, 44, 66),
-                              x_limits_= c(1.6, 2.2),
-                              y_limits_= c(0, 66))
-
-fig_cor_ben_ar <- fig_cor_fun(d_ = ben_pars, 
-                              x_ = "a",
-                              y_ = "r",
-                              x_breaks_ = c(1, 5),
-                              y_breaks_= c(40, 230),
-                              x_limits_= c(1, 5),
-                              y_limits_= c(40, 230))
-
-fig_cor_ben_br <- fig_cor_fun(d_ = ben_pars, 
-                              x_ = "r",
-                              y_ = "b",
-                              x_breaks_ = c(11, 13, 15, 17),
-                              y_breaks_= c(0, 22, 44, 66),
-                              x_limits_= c(11, 17),
-                              y_limits_= c(0, 66))
-
-fig_cor_ben <- plot_grid(fig_cor_ben_ab,
-                         fig_cor_ben_ar,
-                         fig_cor_ben_br,
-                         nrow = 3,
-                         align = "v")
-
-
-
-##### Extract parameters
-
-# pelagic
-pel_pars_wide <- pelagic_rds$fit_summary %>%
-  filter(var %in% c(paste0("b[",1:11,"]"),
-                    paste0("a[",1:11,"]"),
-                    paste0("r[",1:11,"]"))) %>%
-  mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
-         id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
-  rename(lo = `16%`,
-         mi = `50%`,
-         hi = `84%`) %>%
-  select(name, id, lo, mi, hi) %>%
-  left_join(pelagic_rds$dd %>%
-              select(date, site, event) %>%
-              unique() %>%
-              mutate(id = row_number())) %>%
-  select(-id) %>% 
-  unique() %>%
-  left_join(date_levels) %>%
-  left_join(site_levels) %>%
-  pivot_wider(values_from = c(lo, mi, hi))
+# pel_cor <- read_csv("analysis/output/pel_cor.csv")
 
 
 # benthic
-ben_pars_wide <-  benthic_rds$fit_summary %>%
-  filter(var %in% c(paste0("b[",1:11,"]"),
-                    paste0("a[",1:11,"]"),
-                    paste0("r[",1:11,"]"))) %>%
-  mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
-         id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
-  rename(lo = `16%`,
-         mi = `50%`,
-         hi = `84%`) %>%
-  select(name, id, lo, mi, hi) %>%
-  left_join(benthic_rds$dd %>%
-              select(date, site, event) %>%
-              unique() %>%
-              mutate(id = row_number())) %>%
-  select(-id) %>% 
-  unique() %>%
-  left_join(date_levels) %>%
-  left_join(site_levels) %>%
-  pivot_wider(values_from = c(lo, mi, hi))
 
-ggplot(data = pel_pars_wide,
-       aes(x = mi_a,
-           y = mi_b))+
-  geom_point(size = 2)
+# ben_par_names <- c(paste0("b[",1:11,"]"),
+#                    paste0("a[",1:11,"]"),
+#                    paste0("r[",1:11,"]"))
+# 
+# ben_pars_full <- benthic_rds$fit %>%
+#   rstan::extract(pars = ben_par_names) %>%
+#   parallel::mclapply(as_tibble) %>%
+#   bind_cols() %>%
+#   set_names(ben_par_names) %>%
+#   mutate(step = row_number()) %>%
+#   gather(var, val, -step) %>%
+#   mutate(par = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
+#          id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
+#   left_join(benthic_rds$dd %>%
+#               select(date, site, event) %>%
+#               unique() %>%
+#               mutate(id = row_number()))
+#   
+# ben_cor <- ben_pars_full %>%
+#   split(.$step) %>%
+#   parallel::mclapply(function(x){
+#     x %>%
+#       select(par, val, event) %>%
+#       ungroup() %>%
+#       arrange(par) %>%
+#       pivot_wider(names_from = par,
+#                   values_from = val) %>%
+#       select(-event) %>%
+#       cor() %>%
+#       as_tibble() %>%
+#       mutate(step = unique(x$step),
+#              row = row_number())
+#   }) %>%
+#   bind_rows
+# 
+# ben_cor <- ben_cor %>%
+#   pivot_longer(cols = c(a, b, r)) %>%
+#   group_by(row, name) %>%
+#   summarize(lo = quantile(value, probs = 0.16),
+#             mi = median(value),
+#             hi = quantile(value, probs = 0.84)) %>%
+#   ungroup() %>%
+#   pivot_wider(names_from = name,
+#               values_from = c(lo, mi, hi))
+# 
+# # write_csv(ben_cor, "analysis/output/ben_cor.csv")
+
+# ben_cor <- read_csv("analysis/output/ben_cor.csv")
 
 
-# cairo_pdf(file = "analysis/figures/fig_cor.pdf",
-#           width = 3.5, height = 5, family = "Arial")
-# fig_cor
-# dev.off()
 
 #=========================================================================================
 
@@ -865,9 +808,9 @@ pel_var_part_sum <- pel_var_part  %>%
 
 # benthic
 
-# ben_par_names <- c(paste0("b[",1:9,"]"),
-#                    paste0("a[",1:9,"]"),
-#                    paste0("r[",1:9,"]"))
+# ben_par_names <- c(paste0("b[",1:11,"]"),
+#                    paste0("a[",1:11,"]"),
+#                    paste0("r[",1:11,"]"))
 # 
 # ben_pars_full <- benthic_rds$fit %>%
 #   rstan::extract(pars = ben_par_names) %>%
