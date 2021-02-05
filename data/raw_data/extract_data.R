@@ -1,6 +1,6 @@
-#==========
+#=========================================================================================
 #========== Preliminaries
-#==========
+#=========================================================================================
 
 # load packages
 library(readxl)
@@ -12,13 +12,14 @@ path <- "data/raw_data/field_incubations_11mar20.xlsx"
 # examine sheets
 sheets <- excel_sheets(path)
 
+#=========================================================================================
 
 
 
 
-#==========
+#=========================================================================================
 #========== Import
-#==========
+#=========================================================================================
 
 # read sheets
 benthic_grad <- read_excel(path, sheet = "BenthicGradient", na=c("","NA"))
@@ -27,13 +28,14 @@ light_profile <- read_excel(path, sheet = "LightProfiles", na=c("","NA"))
 shading <- read_excel(path, sheet = "Shading", na=c("","NA"))
 hobo_log <- read_excel(path, sheet = "HOBOLog", na=c("","NA")) 
 
+#=========================================================================================
 
 
 
 
-#==========
+#=========================================================================================
 #========== Export
-#==========
+#=========================================================================================
 
 # export sheets
 # write_csv(benthic_grad, "data/raw_data/extracted/benthic_grad.csv")
@@ -42,7 +44,4 @@ hobo_log <- read_excel(path, sheet = "HOBOLog", na=c("","NA"))
 # write_csv(shading, "data/raw_data/extracted/shading.csv")
 # write_csv(hobo_log, "data/raw_data/extracted/hobo_log.csv")
 
-
-
-
-
+#=========================================================================================
