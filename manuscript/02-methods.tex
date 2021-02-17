@@ -2,14 +2,18 @@
 
 \section*{Methods}
 
+Photoinhibition model:
 %
 \begin{equation} 
-    \text{NEP}_j = \frac{\beta_j I}
-                        {\frac{\beta_j}{\alpha_j {I_{opt}}^2} + 
-                          \left(1 - 2 \frac{\beta_j}
-                                            {\alpha_j I_{opt}}
-                          \right) +
-                            \frac{\beta_j}{\alpha_j}
-                        } - \rho_j + \epsilon_i
+    \text{NEP}_j = \beta_j * \left(\frac{\text{PAR}}{\omega_j} \right) 
+                    \times \text{exp} \left(\frac{\text{PAR}}{\omega_j} \right)
+                      - \rho_j
+\end{equation}
+%
+Initial slope:
+%
+\begin{equation} 
+    \lim_{\text{PAR}\to 0} \frac{\text{d}\text{NEP}_j}{\text{d}\text{PAR}} = 
+        \frac{\beta_j}{\omega_j}
 \end{equation}
 %

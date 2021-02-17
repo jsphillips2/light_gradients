@@ -27,6 +27,7 @@ pelagic_grad <- read_excel(path, sheet = "Pelagic", na=c("","NA"))
 light_profile <- read_excel(path, sheet = "LightProfiles", na=c("","NA"))
 shading <- read_excel(path, sheet = "Shading", na=c("","NA"))
 hobo_log <- read_excel(path, sheet = "HOBOLog", na=c("","NA")) 
+pelagic_chl <- read_excel(path, sheet = "PelagicChl", na=c("","NA")) 
 
 #=========================================================================================
 
@@ -43,5 +44,6 @@ hobo_log <- read_excel(path, sheet = "HOBOLog", na=c("","NA"))
 # write_csv(light_profile, "data/raw_data/extracted/light_profile.csv")
 # write_csv(shading, "data/raw_data/extracted/shading.csv")
 # write_csv(hobo_log, "data/raw_data/extracted/hobo_log.csv")
+# write_csv(pelagic_chl, "data/raw_data/extracted/pelagic_chl.csv")
 
 #=========================================================================================

@@ -144,8 +144,8 @@ fig_nep_pel <- ggplot(data = pelagic_rds$dd %>%
                           y = do_flux, 
                           color = date_level))+
   facet_rep_wrap(~site_level, 
-             nrow = 2,
-             strip.position = "right")+
+                 nrow = 2,
+                 strip.position = "right")+
   geom_hline(yintercept = 0,
              size = 0.25,
              linetype = 1,
@@ -198,8 +198,8 @@ fig_nep_ben <- ggplot(data = benthic_rds$dd %>%
                           y = do_flux, 
                           color = date_level))+
   facet_rep_wrap(~site_level, 
-             nrow = 3,
-             strip.position = "right")+
+                 nrow = 3,
+                 strip.position = "right")+
   geom_hline(yintercept = 0,
              size = 0.25,
              linetype = 1,
@@ -284,9 +284,9 @@ fig_nep_comb <- plot_grid(fig_nep_pel,
                           vjust = c(1.1, 1.1)
 )
 fig_nep_leg <- plot_grid(fig_nep_color,
-                     fig_nep_comb,
-                     rel_heights = c(0.1, 1),
-                     nrow = 2)
+                         fig_nep_comb,
+                         rel_heights = c(0.1, 1),
+                         nrow = 2)
 fig_nep <- ggdraw(add_sub(fig_nep_leg,
                           PAR~(mu*mol-photons~m^-{2}~s^{-1}),
                           size = 10,
@@ -306,7 +306,7 @@ fig_nep
 
 
 #=========================================================================================
-#========== Parameters throuogh time
+#========== Parameters through time
 #=========================================================================================
 
 ##### Extract parameters
@@ -314,7 +314,7 @@ fig_nep
 # pelagic
 pel_pars <- pelagic_rds$fit_summary %>%
   filter(var %in% c(paste0("b[",1:11,"]"),
-                    paste0("a[",1:11,"]"),
+                    paste0("o[",1:11,"]"),
                     paste0("r[",1:11,"]"))) %>%
   mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
          id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
@@ -341,7 +341,7 @@ pel_pars <- pelagic_rds$fit_summary %>%
 # benthic
 ben_pars <-  benthic_rds$fit_summary %>%
   filter(var %in% c(paste0("b[",1:11,"]"),
-                    paste0("a[",1:11,"]"),
+                    paste0("o[",1:11,"]"),
                     paste0("r[",1:11,"]"))) %>%
   mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
          id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
@@ -362,12 +362,13 @@ ben_pars <-  benthic_rds$fit_summary %>%
   mutate(id = row_number(),
          id = as.numeric(date_level),
          id = id + ifelse(site_level == "north", -0.1, 
-                                  ifelse(site_level == "south", 0.1, 0.3)),
+                          ifelse(site_level == "south", 0.1, 0.3)),
          year = year(as_date(date)))  %>%
   ungroup()
 
 # plot function
 fig_par_fun <- function(data_,
+                        y_scale = 1,
                         y_title_,
                         y_breaks_,
                         y_limits_,
@@ -375,12 +376,12 @@ fig_par_fun <- function(data_,
                         x_label_) {
   ggplot(data = data_,
          aes(x = id, 
-             y = 1000 * mi, 
+             y = y_scale * mi, 
              color = site_level,
              group = interaction(site_level,year)))+
     geom_line()+
-    geom_errorbar(aes(ymin = 1000 * lo,
-                      ymax = 1000 * hi),
+    geom_errorbar(aes(ymin = y_scale * lo,
+                      ymax = y_scale * hi),
                   width = 0,
                   size = 0.3)+
     geom_point(size = 1.5)+
@@ -404,10 +405,10 @@ fig_par_fun <- function(data_,
 
 # plot pelagic panels 
 
-fig_par_pel_a <- fig_par_fun(data_ = pel_pars %>% filter(name == "a"),
-                             y_title_ = "Initial slope",
-                             y_breaks = c(0, 2, 4),
-                             y_limits = c(0, 4),
+fig_par_pel_o <- fig_par_fun(data_ = pel_pars %>% filter(name == "o"),
+                             y_title_ = "Optimum PAR",
+                             y_breaks = c(0, 200, 400),
+                             y_limits = c(0, 400),
                              x_breaks_ = 1:5,
                              x_label_ = NULL)+
   theme(plot.margin = margin(t = 0,
@@ -416,6 +417,7 @@ fig_par_pel_a <- fig_par_fun(data_ = pel_pars %>% filter(name == "a"),
                              r = 6))
 
 fig_par_pel_b <- fig_par_fun(data_ = pel_pars %>% filter(name == "b"),
+                             y_scale = 1000,
                              y_title_ = "Max GPP",
                              y_breaks = c(0, 40, 80),
                              y_limits = c(0, 80),
@@ -427,6 +429,7 @@ fig_par_pel_b <- fig_par_fun(data_ = pel_pars %>% filter(name == "b"),
                              r = 6))
 
 fig_par_pel_r <- fig_par_fun(data_ = pel_pars %>% filter(name == "r"),
+                             y_scale = 1000,
                              y_title_ = "Respiration",
                              y_breaks = c(0, 10, 20),
                              y_limits = c(0, 20),
@@ -440,18 +443,18 @@ fig_par_pel_r <- fig_par_fun(data_ = pel_pars %>% filter(name == "r"),
                                    vjust = 0.75, 
                                    hjust=0.9))
 
-fig_par_pel <- plot_grid(fig_par_pel_a,
+fig_par_pel <- plot_grid(fig_par_pel_o,
                          fig_par_pel_b,
                          fig_par_pel_r,
                          nrow = 3,
                          align = "v")
-  
+
 # plot benthic panels 
 
-fig_par_ben_a <- fig_par_fun(data_ = ben_pars %>% filter(name == "a"),
+fig_par_ben_o <- fig_par_fun(data_ = ben_pars %>% filter(name == "o"),
                              y_title_ = "",
-                             y_breaks = c(0, 4, 8),
-                             y_limits = c(0, 8.1),
+                             y_breaks = c(0, 500, 1000),
+                             y_limits = c(0,  1000),
                              x_breaks_ = 1:5,
                              x_label_ = NULL)+
   theme(plot.margin = margin(t = 0,
@@ -460,6 +463,7 @@ fig_par_ben_a <- fig_par_fun(data_ = ben_pars %>% filter(name == "a"),
                              r = 5))
 
 fig_par_ben_b <- fig_par_fun(data_ = ben_pars %>% filter(name == "b"),
+                             y_scale = 1000,
                              y_title_ = "",
                              y_breaks = c(0, 200, 400),
                              y_limits = c(0, 400),
@@ -471,6 +475,7 @@ fig_par_ben_b <- fig_par_fun(data_ = ben_pars %>% filter(name == "b"),
                              r = 5))
 
 fig_par_ben_r <- fig_par_fun(data_ = ben_pars %>% filter(name == "r"),
+                             y_scale = 1000,
                              y_title_ = "",
                              y_breaks = c(0, 150, 300),
                              y_limits = c(0, 300),
@@ -484,7 +489,7 @@ fig_par_ben_r <- fig_par_fun(data_ = ben_pars %>% filter(name == "r"),
                                    vjust = 0.75, 
                                    hjust=0.9))
 
-fig_par_ben <- plot_grid(fig_par_ben_a,
+fig_par_ben <- plot_grid(fig_par_ben_o,
                          fig_par_ben_b,
                          fig_par_ben_r,
                          nrow = 3,
@@ -531,9 +536,9 @@ fig_par_color <- get_legend(ggplot(data = ben_pars  %>%
                                     legend.spacing.x = unit(0.6, "lines")))
 
 fig_par <- plot_grid(fig_par_color,
-                         fig_par_comb,
-                         rel_heights = c(0.2, 1),
-                         nrow = 2)
+                     fig_par_comb,
+                     rel_heights = c(0.2, 1),
+                     nrow = 2)
 fig_par
 # cairo_pdf(file = "analysis/figures/fig_par.pdf",
 #           width = 3.5, height = 5, family = "Arial")
@@ -550,16 +555,16 @@ fig_par
 #========== Parameter correlations
 #=========================================================================================
 
-# # set up par names
-# par_names <- c("Initial slope",
+# set up par names
+# par_names <- c("Optimum PAR",
 #                "Max GPP",
 #                "Respiration")
-# names(par_names) <- c("a","b","r")
+# names(par_names) <- c("o","b","r")
 # 
 # # pelagic
 # 
 # pel_par_names <- c(paste0("b[",1:9,"]"),
-#                    paste0("a[",1:9,"]"),
+#                    paste0("o[",1:9,"]"),
 #                    paste0("r[",1:9,"]"))
 # 
 # pel_pars_full <- pelagic_rds$fit %>%
@@ -592,9 +597,9 @@ fig_par
 #              row = row_number())
 #   }) %>%
 #   bind_rows
-#   
+# 
 # pel_cor <- pel_cor %>%
-#   pivot_longer(cols = c(a, b, r)) %>%
+#   pivot_longer(cols = c(o, b, r)) %>%
 #   group_by(row, name) %>%
 #   summarize(lo = quantile(value, probs = 0.16),
 #             mi = median(value),
@@ -611,7 +616,7 @@ fig_par
 # benthic
 
 # ben_par_names <- c(paste0("b[",1:11,"]"),
-#                    paste0("a[",1:11,"]"),
+#                    paste0("o[",1:11,"]"),
 #                    paste0("r[",1:11,"]"))
 # 
 # ben_pars_full <- benthic_rds$fit %>%
@@ -646,7 +651,7 @@ fig_par
 #   bind_rows
 # 
 # ben_cor <- ben_cor %>%
-#   pivot_longer(cols = c(a, b, r)) %>%
+#   pivot_longer(cols = c(o, b, r)) %>%
 #   group_by(row, name) %>%
 #   summarize(lo = quantile(value, probs = 0.16),
 #             mi = median(value),
@@ -655,7 +660,7 @@ fig_par
 #   pivot_wider(names_from = name,
 #               values_from = c(lo, mi, hi))
 # 
-# # write_csv(ben_cor, "analysis/output/ben_cor.csv")
+# write_csv(ben_cor, "analysis/output/ben_cor.csv")
 
 # ben_cor <- read_csv("analysis/output/ben_cor.csv")
 
@@ -673,7 +678,7 @@ fig_par
 
 # pelagic
 re_sd_pel <- pelagic_rds$fit_summary %>%
-  filter(var %in% c("la_s[1]",
+  filter(var %in% c("lo_s[1]",
                     "lb_s[1]",
                     "lr_s[1]")) %>%
   mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
@@ -681,18 +686,11 @@ re_sd_pel <- pelagic_rds$fit_summary %>%
   rename(lo = `16%`,
          mi = `50%`,
          hi = `84%`) %>%
-  select(name, id, lo, mi, hi) %>%
-  mutate(name = factor(name,
-                       levels = c("la_s",
-                                  "lb_s",
-                                  "lr_s"),
-                       labels = c("Initial slope",
-                                  "Max GPP",
-                                  "Respiration")))
+  select(name, id, lo, mi, hi) 
 
 # benthic
 re_sd_ben <- benthic_rds$fit_summary %>%
-  filter(var %in% c("la_s[1]",
+  filter(var %in% c("lo_s[1]",
                     "lb_s[1]",
                     "lr_s[1]")) %>%
   mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
@@ -700,26 +698,26 @@ re_sd_ben <- benthic_rds$fit_summary %>%
   rename(lo = `16%`,
          mi = `50%`,
          hi = `84%`) %>%
-  select(name, id, lo, mi, hi) %>%
-  mutate(name = factor(name,
-                       levels = c("la_s",
-                                  "lb_s",
-                                  "lr_s"),
-                       labels = c("Initial slope",
-                                  "Max GPP",
-                                  "Respiration")))
+  select(name, id, lo, mi, hi)
 
 # combine
 re_sd <- bind_rows(re_sd_pel %>% mutate(type = "Pelagic"),
                    re_sd_ben %>% mutate(type = "Benthic")) %>%
   mutate(type = factor(type,
                        levels = c("Pelagic",
-                                  "Benthic")))
+                                  "Benthic")),
+         name = factor(name,
+                       levels = c("lo_s",
+                                  "lb_s",
+                                  "lr_s"),
+                       labels = c("Optimum PAR",
+                                  "Max GPP",
+                                  "Respiration")))
 
 # plot
-re_sd_lab <- tidyr::expand(sds,
+re_sd_lab <- tidyr::expand(re_sd,
                            type = type,
-                           name = "Max GPP",
+                           name = "Optimum PAR",
                            mi = 1.95)
 fig_sd <- ggplot(data = re_sd,
                  aes(x = name,
@@ -766,7 +764,7 @@ fig_sd
 # pelagic
 
 # pel_par_names <- c(paste0("b[",1:9,"]"),
-#                    paste0("a[",1:9,"]"),
+#                    paste0("o[",1:9,"]"),
 #                    paste0("r[",1:9,"]"))
 # 
 # pel_pars_full <- pelagic_rds$fit %>%
@@ -809,7 +807,7 @@ pel_var_part_sum <- pel_var_part  %>%
 # benthic
 
 # ben_par_names <- c(paste0("b[",1:11,"]"),
-#                    paste0("a[",1:11,"]"),
+#                    paste0(oa[",1:11,"]"),
 #                    paste0("r[",1:11,"]"))
 # 
 # ben_pars_full <- benthic_rds$fit %>%
@@ -855,19 +853,19 @@ var_part_sum = bind_rows(pel_var_part_sum %>% mutate(type = "Pelagic"),
                        levels = c("Pelagic",
                                   "Benthic")),
          name = factor(par,
-                       levels = c("a",
+                       levels = c("o",
                                   "b",
                                   "r"),
-                       labels = c("Initial slope",
+                       labels = c("Optimum PAR",
                                   "Max GPP",
                                   "Respiration")))
-  
+
 
 # plot
 var_lab <- tidyr::expand(var_part_sum,
-                     type = type,
-                     name = "Max GPP",
-                     mi = 2.75)
+                         type = type,
+                         name = "Optimum PAR",
+                         mi = 2.75)
 fig_var <- ggplot(data = var_part_sum,
                   aes(x = name,
                       y = mi))+
@@ -903,5 +901,78 @@ fig_var
 #           width = 3.5, height = 4.75, family = "Arial")
 # fig_var
 # dev.off()
+
+#=========================================================================================
+
+
+
+
+
+#=========================================================================================
+#========== Parameters with temp
+#=========================================================================================
+
+##### Extract parameters
+
+# pelagic
+pel_pars <- pelagic_rds$fit_summary %>%
+  filter(var %in% c(paste0("b[",1:11,"]"),
+                    paste0("a[",1:11,"]"),
+                    paste0("r[",1:11,"]"))) %>%
+  mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
+         id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
+  rename(lo = `16%`,
+         mi = `50%`,
+         hi = `84%`) %>%
+  select(name, id, lo, mi, hi) %>%
+  left_join(pelagic_rds$dd %>%
+              select(date, site, event, temp) %>%
+              unique() %>%
+              mutate(id = row_number())) %>%
+  select(-id) %>% 
+  unique() %>%
+  left_join(date_levels) %>%
+  left_join(site_levels) %>%
+  mutate(id = row_number(),
+         id = as.numeric(date_level),
+         id = id + ifelse(site_level == "north", -0.1, 
+                          ifelse(site_level == "south", 0.1, 0)),
+         year = year(as_date(date)))  %>%
+  ungroup()
+
+
+# benthic
+ben_pars <-  benthic_rds$fit_summary %>%
+  filter(var %in% c(paste0("b[",1:11,"]"),
+                    paste0("a[",1:11,"]"),
+                    paste0("r[",1:11,"]"))) %>%
+  mutate(name = strsplit(var, "\\[|\\]|,") %>% map_chr(~as.character(.x[1])),
+         id = strsplit(var, "\\[|\\]|,") %>% map_int(~as.integer(.x[2]))) %>%
+  rename(lo = `16%`,
+         mi = `50%`,
+         hi = `84%`) %>%
+  select(name, id, lo, mi, hi) %>%
+  left_join(benthic_rds$dd %>%
+              select(date, site, event, temp) %>%
+              unique() %>%
+              mutate(id = row_number())) %>%
+  select(-id) %>% 
+  unique() %>%
+  left_join(date_levels) %>%
+  left_join(site_levels) %>%
+  group_by(name) %>%
+  arrange(site_level, event) %>%
+  mutate(id = row_number(),
+         id = as.numeric(date_level),
+         id = id + ifelse(site_level == "north", -0.1, 
+                          ifelse(site_level == "south", 0.1, 0.3)),
+         year = year(as_date(date)))  %>%
+  ungroup()
+
+ben_pars %>%
+  filter(name == "r") %>%
+  ggplot(aes(temp,
+             mi))+
+  geom_point(size = 2)
 
 #=========================================================================================

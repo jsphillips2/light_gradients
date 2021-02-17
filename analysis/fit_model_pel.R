@@ -42,19 +42,15 @@ dd_sum <- dd %>%
 #=========================================================================================
 
 # define variables
-temp_ref <- 15
-kb <- 8.62e-5
 n_obs <- nrow(dd)
 x <- cbind(as.numeric(dd$event),
            as.numeric(dd$event),
-           rep(1, n_obs),
            as.numeric(dd$event))
 par <- dd$par
 do_flux <- dd$do_flux
 n_sum <- nrow(dd_sum)
 x_sum <- cbind(as.numeric(dd_sum$event),
                as.numeric(dd_sum$event),
-               rep(1, n_sum),
                as.numeric(dd_sum$event))
 par_sum <- dd_sum$par
 
@@ -81,12 +77,12 @@ data_list <- list(
 
 # MCMC specifications
 chains <- 4
-iter <- 3000
-adapt_delta <- 0.99
+iter <- 2000
+adapt_delta <- 0.95
 max_treedepth <- 10
 
 # # fit model
-# fit <- stan(file = "analysis/stan/pi_curve_sat.stan", data = data_list, seed=2e3,
+# fit <- stan(file = "analysis/stan/pi_curve.stan", data = data_list, seed=2e3,
 #             chains = chains, iter = iter,
 #             control = list(adapt_delta = adapt_delta, max_treedepth = max_treedepth))
 # 
