@@ -16,7 +16,7 @@ shading <- read_csv("data/raw_data/extracted/shading.csv")
 # in-water calibration multiplier for UW-LTREB Li-Cor meter is -344.88
 # in-air calibration multiplier for UW-LTREB Li-Cor meter is -261.28
 profiles <- profiles %>%
-  mutate(par = ifelse(year(sampledate) < 2019, (-261.28/-344.88)*par, par))
+  mutate(par = ifelse(year(sampledate) < 2019 & depth < 0, (-261.28/-344.88)*par, par))
 
 #=========================================================================================
 
@@ -32,7 +32,9 @@ profiles <- profiles %>%
 light_atten <- profiles %>%
   mutate(par = ifelse(par == 0, 0.5, par)) %>%
   group_by(time, site) %>%
-  filter(depth >= 0, length(na.omit(par) > 1)) %>%
+  mutate(test = length(na.omit(par))) %>%
+  filter(depth >= 0, test > 1) %>%
+  select(-test) %>%
   ungroup() %>%
   split(.$time) %>%
   lapply(function(x){split(x, x$site)}) %>%

@@ -75,8 +75,8 @@ data_list <- list(
 
 # MCMC specifications
 chains <- 4
-iter <- 2000
-adapt_delta <- 0.95
+iter <- 3000
+adapt_delta <- 0.97
 max_treedepth <- 10
 
 # # fit model

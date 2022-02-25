@@ -91,32 +91,41 @@ parameters {
 
 transformed parameters {
   
-  // Declare variables 
+  // Declare variables
   vector[xs[1, 1]] b_z;          // beta (maximum GPP when PAR is saturating)
   vector[xs[1, 2]] o_z;          // omega (light level where GPP is optimized)
   vector[xs[1, 3]] r_z;          // rho (ER)
+  vector[xs[1, 1]] b_lz;          // beta (maximum GPP when PAR is saturating)
+  vector[xs[1, 2]] o_lz;          // omega (light level where GPP is optimized)
+  vector[xs[1, 3]] r_lz;          // rho (ER)
   vector[n_obs] nep_z;           // NEP (on z-scored response scale)
   vector[n_obs] y_p;             // predicted values (on z-scored response scale)
   
   
   // Calculate parameters
   if (xs[1, 1] > 1) {
-    b_z = exp(lb_m + lb_s[1] * lb_d);
+    b_lz = lb_m + lb_s[1] * lb_d;
+    b_z = exp(b_lz);
   } 
   else {
-    b_z = exp(rep_vector(lb_m, xs[1, 1]));
+    b_lz = rep_vector(lb_m, xs[1, 1]);
+    b_z = exp(b_lz);
   }
   if (xs[1, 2] > 1) {
-    o_z = exp(lo_m + lo_s[1] * lo_d);
+    o_lz = lo_m + lo_s[1] * lo_d;
+    o_z = exp(o_lz);
   } 
   else {
-    o_z = exp(rep_vector(lo_m, xs[1, 2]));
+    o_lz = rep_vector(lo_m, xs[1, 2]);
+    o_z = exp(o_lz);
   }
   if (xs[1, 3] > 1) {
-    r_z = exp(lr_m + lr_s[1] * lr_d);
+    r_lz = lr_m + lr_s[1] * lr_d;
+    r_z = exp(r_lz);
   } 
   else {
-    r_z = exp(rep_vector(lr_m, xs[1, 3]));
+    r_lz = rep_vector(lr_m, xs[1, 3]);
+    r_z = exp(r_lz);
   }
   
   // Calculate metablism
@@ -146,9 +155,9 @@ model {
   lb_m ~ normal(0, 1); 
   lo_m ~ normal(0, 1); 
   lr_m ~ normal(0, 1); 
-  lb_s ~ gamma(1.5, 1.5 / 0.5);
-  lo_s ~ gamma(1.5, 1.5 / 0.5);
-  lr_s ~ gamma(1.5, 1.5 / 0.5);
+  lb_s ~ gamma(1.5, 1.5 / 0.25);
+  lo_s ~ gamma(1.5, 1.5 / 0.25);
+  lr_s ~ gamma(1.5, 1.5 / 0.25);
   s ~ gamma(1.5, 1.5 / 0.5);
 
   // Random deviates

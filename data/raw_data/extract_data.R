@@ -7,7 +7,7 @@ library(readxl)
 library(readr)
 
 # set path
-path <- "data/raw_data/field_incubations_11mar20.xlsx"
+path <- "data/raw_data/field_incubations_feb2022.xlsx"
 
 # examine sheets
 sheets <- excel_sheets(path)
